@@ -38,8 +38,9 @@ export const googleOAuth = async (startOAuthFlow: any) => {
         await setActive({ session: createdSessionId });
 
         if (signUp.createdUserId) {
-          await axios.post("/(api)/user", {
-            name: `${signUp.firstName} ${signUp.lastName}`,
+          await axios.post("/api/user", {
+            firstname: signUp.firstName,
+            lastname: signUp.lastName,
             email: signUp.emailAddress,
             clerkId: signUp.createdUserId,
           });

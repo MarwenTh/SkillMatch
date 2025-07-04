@@ -3,8 +3,8 @@ import CustomButton from "@/components/CustomButton";
 import InputField from "@/components/InputField";
 import OAuth from "@/components/OAuth";
 import { icons, images } from "@/constants";
+import { fetchAPI } from "@/lib/fetch";
 import { useSignUp } from "@clerk/clerk-expo";
-import axios from "axios";
 import { Link, router } from "expo-router";
 import { useState } from "react";
 import { Alert, Image, Text, View } from "react-native";
@@ -46,12 +46,14 @@ const SignUp = () => {
         state: "pending",
       });
     } catch (err: any) {
-      Alert.alert("Error :", err.errors[0].longMessage);
+      // See https://clerk.com/docs/custom-flows/error-handling
+      // for more info on error handling
+      // console.log(JSON.stringify(err, null, 2));
+      Alert.alert("Error", err.errors[0].longMessage);
     } finally {
       setLoading(false);
     }
   };
-
   const onPressVerify = async () => {
     setVerificationLoading(true);
     if (!isLoaded) return;
@@ -60,11 +62,14 @@ const SignUp = () => {
         code: verification.code,
       });
       if (completeSignUp.status === "complete") {
-        await axios.post("/api/user", {
-          firstname: form.name.firstName,
-          lastname: form.name.lastName,
-          email: form.email,
-          clerkId: completeSignUp.createdUserId,
+        await fetchAPI("/api/user", {
+          method: "POST",
+          body: JSON.stringify({
+            firstname: form.name.firstName,
+            lastname: form.name.lastName,
+            email: form.email,
+            clerkId: completeSignUp.createdUserId,
+          }),
         });
         await setActive({ session: completeSignUp.createdSessionId });
         setVerification({
@@ -77,13 +82,17 @@ const SignUp = () => {
           error: "Verification failed. Please try again.",
           state: "failed",
         });
+        console.log(JSON.stringify(completeSignUp, null, 2));
       }
     } catch (err: any) {
+      // See https://clerk.com/docs/custom-flows/error-handling
+      // for more info on error handling
       setVerification({
         ...verification,
         error: err.errors[0].longMessage,
         state: "failed",
       });
+      console.error(JSON.stringify(err, null, 2));
     } finally {
       setVerificationLoading(false);
     }
@@ -196,9 +205,9 @@ const SignUp = () => {
         isVisible={
           verification.state === "pending" || verification.state === "failed"
         }
-        onBackdropPress={() =>
-          setVerification({ ...verification, state: "pending" })
-        }
+        //</View>onBackdropPress={() =>
+        //setVerification({ ...verification, state: "pending" })
+        //}
         onModalHide={() => {
           if (verification.state === "success") {
             setShowSuccessModal(true);
